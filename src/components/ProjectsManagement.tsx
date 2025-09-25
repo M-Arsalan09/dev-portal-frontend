@@ -1017,12 +1017,12 @@ const ProjectSkillsSelectionModal: React.FC<ProjectSkillsSelectionModalProps> = 
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-white flex items-center">
                       <Tag className="w-5 h-5 mr-2 text-violet-400" />
-                      Skills in {selectedSkillArea.name}
+                      Select Skills
                     </h3>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => {
-                          const allSkillIds = skills.map(skill => skill.skill_id);
+                          const allSkillIds = skills.map(skill => skill.id);
                           setSelectedSkills(prev => {
                             const newSelection = [...prev];
                             allSkillIds.forEach(id => {
@@ -1057,23 +1057,23 @@ const ProjectSkillsSelectionModal: React.FC<ProjectSkillsSelectionModalProps> = 
                       {skills.map((skill) => (
                         <button
                           key={skill.id}
-                          onClick={() => toggleSkillSelection(skill.skill_id)}
+                          onClick={() => toggleSkillSelection(skill.id)}
                           className={`p-3 rounded-lg border transition-all flex items-center space-x-3 ${
-                            selectedSkills.includes(skill.skill_id)
+                            selectedSkills.includes(skill.id)
                               ? 'bg-violet-500/20 border-violet-500 text-violet-300'
                               : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
                           }`}
                         >
                           <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                            selectedSkills.includes(skill.skill_id)
+                            selectedSkills.includes(skill.id)
                               ? 'bg-violet-500 border-violet-500'
                               : 'border-slate-400'
                           }`}>
-                            {selectedSkills.includes(skill.skill_id) && (
+                            {selectedSkills.includes(skill.id) && (
                               <X className="w-4 h-4 text-white" />
                             )}
                           </div>
-                          <span className="font-medium">{skill.skill_name}</span>
+                          <span className="font-medium">{skill.name}</span>
                         </button>
                       ))}
                     </div>
@@ -1090,13 +1090,13 @@ const ProjectSkillsSelectionModal: React.FC<ProjectSkillsSelectionModalProps> = 
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.map((skillId) => {
-                      const skill = skills.find(s => s.skill_id === skillId);
+                      const skill = skills.find(s => s.id === skillId);
                       return skill ? (
                         <span
                           key={skillId}
                           className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-sm border border-emerald-500/30"
                         >
-                          {skill.skill_name}
+                          {skill.name}
                         </span>
                       ) : null;
                     })}

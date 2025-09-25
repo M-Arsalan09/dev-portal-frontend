@@ -30,7 +30,7 @@ const DashboardOverview: React.FC = () => {
       borderColor: 'border-blue-500/20'
     },
     {
-      title: 'Active Projects',
+      title: 'Projects',
       value: '0',
       change: '',
       changeType: 'neutral',
