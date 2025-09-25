@@ -22,8 +22,8 @@ export interface SkillArea {
 }
 
 export interface Skill {
-  id: number;
-  name: string;
+  skill_id: number;
+  skill_name: string;
   skill_area: number;
   created_at?: string;
 }
