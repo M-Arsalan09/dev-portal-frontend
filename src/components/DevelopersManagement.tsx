@@ -737,10 +737,10 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
                         <div className="flex flex-wrap gap-2">
                           {(area.skills || []).map((skill) => (
                             <span 
-                              key={skill.id} 
+                              key={skill.skill_id} 
                               className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gradient-to-r from-slate-600 to-slate-700 text-slate-200 border border-slate-600/50 hover:scale-105 transition-transform"
                             >
-                              {skill.name.trim()}
+                              {skill.skill_name.trim()}
                             </span>
                           ))}
                         </div>
