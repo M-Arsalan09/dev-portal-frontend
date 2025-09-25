@@ -233,7 +233,7 @@ const SkillAreaCard: React.FC<{
   onDelete: (id: number) => void;
   onAddSkills: (skillArea: SkillArea) => void;
   onView: () => void;
-}> = ({ skillArea, onEdit, onDelete, onAddSkills, onView }) => {
+}> = ({ skillArea, onEdit, onDelete, onAddSkills }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailedSkillArea, setDetailedSkillArea] = useState<SkillArea | null>(null);
   const [isLoading, setIsLoading] = useState(false);

@@ -21,7 +21,7 @@ import {
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import apiService from '../services/api';
-import type { DeveloperProject, CreateProjectRequest, Developer, ProjectCategory } from '../types/api';
+import type { DeveloperProject, CreateProjectRequest, Developer } from '../types/api';
 
 interface ProjectDetailsModalProps {
   isOpen: boolean;

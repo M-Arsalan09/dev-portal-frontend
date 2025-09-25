@@ -8,8 +8,7 @@ import {
   Brain,
   X,
   Home,
-  ChevronRight,
-  Sparkles
+  ChevronRight
 } from 'lucide-react';
 
 export interface SidebarProps {

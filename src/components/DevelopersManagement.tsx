@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, 
+import {  
   Edit, 
   Trash2, 
   Search, 
@@ -10,7 +9,6 @@ import {
   Mail, 
   Calendar,
   Briefcase,
-  MapPin,
   CheckCircle,
   X,
   Save,
@@ -33,11 +31,11 @@ interface DeveloperModalProps {
 }
 
 const DeveloperModal: React.FC<DeveloperModalProps> = ({ isOpen, onClose, developerId, onSave }) => {
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<CreateDeveloperRequest>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateDeveloperRequest>();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [originalData, setOriginalData] = useState<CreateDeveloperRequest | null>(null);
-  const [developerData, setDeveloperData] = useState<Developer | null>(null);
+  const [,setDeveloperData] = useState<Developer | null>(null);
 
   useEffect(() => {
     const fetchDeveloperDetails = async () => {
@@ -101,7 +99,7 @@ const DeveloperModal: React.FC<DeveloperModalProps> = ({ isOpen, onClose, develo
         
         // If no changes, show message and return
         if (Object.keys(changedData).length === 0) {
-          toast.info('No changes were made.');
+          toast('No changes were made.');
           onClose();
           return;
         }

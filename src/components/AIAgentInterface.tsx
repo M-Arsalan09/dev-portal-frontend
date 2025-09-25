@@ -4,23 +4,18 @@ import ReactMarkdown from 'react-markdown';
 import { 
   Brain, 
   Send, 
-  Upload, 
-  FileText, 
-  Download,
+  Upload,
   Sparkles,
   MessageCircle,
   Search,
   Users,
-  Zap,
-  AlertCircle,
   CheckCircle,
-  Clock,
   X
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import apiService from '../services/api';
-import type { AgentQueryRequest, AnalyzeProjectRequest, AgentResponse } from '../types/api';
+import type { AnalyzeProjectRequest, AgentResponse } from '../types/api';
 
 interface QueryChatProps {
   onQuery: (query: string) => Promise<AgentResponse>;
