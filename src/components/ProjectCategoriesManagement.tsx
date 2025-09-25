@@ -327,13 +327,13 @@ const ProjectCategoryCard: React.FC<{
                     <div>
                       <h4 className="text-white font-medium mb-3">Required Skills:</h4>
                       <div className="space-y-2">
-                        {detailedCategory.skills?.map((skillArea) => (
+                        {detailedCategory.skills?.map((skillArea: any) => (
                           <div key={skillArea.skill_area_id} className="bg-white/5 rounded-lg p-3">
                             <h5 className="text-white/90 font-medium text-sm mb-1">
                               {skillArea.skill_area_name}
                             </h5>
                             <div className="flex flex-wrap gap-1">
-                              {skillArea.skills?.map((skill) => (
+                              {skillArea.skills?.map((skill: any) => (
                                 <span
                                   key={skill.skill_id}
                                   className="inline-flex items-center px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs"
