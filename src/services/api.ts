@@ -8,6 +8,8 @@ import type {
   DetailedProjectCategory,
   ApiResponse,
   AgentResponse,
+  RawSkillArea,
+  RawSkill,
   CreateDeveloperRequest,
   AddSkillsRequest,
   CreateProjectRequest,
@@ -98,14 +100,14 @@ class ApiService {
         created_at: raw.data.created_at,
         // map grouped skills to internal types
         skills: Array.isArray(raw.data?.skills)
-          ? raw.data.skills.map((area: any) => ({
-              id: area.skill_area_id ?? area.id,
-              name: area.skill_area_name ?? area.name,
+          ? raw.data.skills.map((area: RawSkillArea) => ({
+              id: area.skill_area_id,
+              name: area.skill_area_name,
               skills: Array.isArray(area.skills)
-                ? area.skills.map((s: any) => ({
-                    id: s.skill_id ?? s.id,
-                    name: s.skill_name ?? s.name,
-                    skill_area: area.skill_area_id ?? area.id,
+                ? area.skills.map((s: RawSkill) => ({
+                    id: s.skill_id,
+                    name: s.skill_name,
+                    skill_area: area.skill_area_id,
                   }))
                 : [],
             }))
@@ -168,10 +170,30 @@ class ApiService {
   }
 
   async getSkillArea(id: number): Promise<ApiResponse<SkillArea>> {
-    const response = await this.api.get<ApiResponse<SkillArea>>(
+    const response = await this.api.get<ApiResponse<any>>(
       `/api/skill-areas/${id}/`
     );
-    return response.data;
+
+    const raw = response.data as ApiResponse<any>;
+    const normalized: ApiResponse<SkillArea> = {
+      details: raw.details,
+      data: {
+        id: raw.data.id,
+        name: raw.data.name,
+        created_at: raw.data.created_at,
+        skills: Array.isArray(raw.data?.skills)
+          ? raw.data.skills.map((skill: any) => ({
+              id: skill.skill_id ?? skill.id,
+              name: skill.skill_name ?? skill.name,
+              skill_area: raw.data.id,
+              created_at: skill.created_at,
+            }))
+          : [],
+      },
+      pagination: raw.pagination,
+    };
+
+    return normalized;
   }
 
   async createSkillArea(data: CreateSkillAreaRequest): Promise<ApiResponse<SkillArea>> {
@@ -245,6 +267,14 @@ class ApiService {
   async createProjectCategory(data: CreateProjectCategoryRequest | { name: string; description: string; use_cases: string[] }): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.post<ApiResponse<ProjectCategory>>(
       '/api/projects/',
+      data
+    );
+    return response.data;
+  }
+
+  async addDeveloperSkills(data: { dev_id: number; skill_ids: number[] }): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>(
+      '/api/developers/add_dev_skills/',
       data
     );
     return response.data;

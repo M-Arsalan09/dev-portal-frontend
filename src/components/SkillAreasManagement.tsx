@@ -323,11 +323,11 @@ const SkillAreaCard: React.FC<{
                   <div className="flex flex-wrap gap-2">
                     {detailedSkillArea.skills.map((skill) => (
                       <span
-                        key={skill.skill_id}
+                        key={skill.id}
                         className="inline-flex items-center px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm"
                       >
                         <Code className="w-3 h-3 mr-1" />
-                        {skill.skill_name}
+                        {skill.name}
                       </span>
                     ))}
                   </div>

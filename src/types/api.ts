@@ -22,10 +22,38 @@ export interface SkillArea {
 }
 
 export interface Skill {
-  skill_id: number;
-  skill_name: string;
+  id: number;
+  name: string;
   skill_area: number;
   created_at?: string;
+}
+
+// Raw API response types for skills (before transformation)
+export interface RawSkillArea {
+  skill_area_id: number;
+  skill_area_name: string;
+  skills: RawSkill[];
+}
+
+export interface RawSkill {
+  skill_id: number;
+  skill_name: string;
+}
+
+// Raw API response type for developer (before transformation)
+export interface RawDeveloper {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  graduation_date: string;
+  industry_experience: number;
+  employment_start_date: string;
+  is_available: boolean;
+  last_updated?: string;
+  created_at?: string;
+  skills?: RawSkillArea[];
+  projects?: any[]; // Projects have their own transformation logic
 }
 
 export interface DeveloperProject {

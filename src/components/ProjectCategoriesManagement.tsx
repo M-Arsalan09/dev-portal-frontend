@@ -7,6 +7,7 @@ import {
   Search, 
   Filter, 
   Code2, 
+  CheckCircle,
   X,
   Save,
   Eye,
@@ -603,13 +604,33 @@ const SkillSelectionModal: React.FC<SkillSelectionModalProps> = ({ isOpen, onClo
                       <List className="w-5 h-5 mr-2 text-violet-400" />
                       Skills in {selectedSkillArea.skill_area}
                     </h3>
-                    <button
-                      onClick={() => setShowAddSkillModal(true)}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center space-x-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add New Skill</span>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          const allSkillIds = skills.map(skill => skill.skill_id);
+                          setSelectedSkills(prev => {
+                            const newSelection = [...prev];
+                            allSkillIds.forEach(id => {
+                              if (!newSelection.includes(id)) {
+                                newSelection.push(id);
+                              }
+                            });
+                            return newSelection;
+                          });
+                        }}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-1 text-sm"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Select All</span>
+                      </button>
+                      <button
+                        onClick={() => setShowAddSkillModal(true)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add New Skill</span>
+                      </button>
+                    </div>
                   </div>
 
                   {isLoadingSkills ? (

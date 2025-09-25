@@ -16,7 +16,8 @@ import {
   UserPlus,
   Code2,
   Tags,
-  FolderOpen
+  FolderOpen,
+  Plus
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -737,10 +738,10 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
                         <div className="flex flex-wrap gap-2">
                           {(area.skills || []).map((skill) => (
                             <span 
-                              key={skill.skill_id} 
+                              key={skill.id} 
                               className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gradient-to-r from-slate-600 to-slate-700 text-slate-200 border border-slate-600/50 hover:scale-105 transition-transform"
                             >
-                              {skill.skill_name.trim()}
+                              {skill.name?.trim() || 'Unknown Skill'}
                             </span>
                           ))}
                         </div>
@@ -839,12 +840,496 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
   );
 };
 
+interface DeveloperSkillsModalProps {
+  isOpen: boolean;
+  developer: Developer | null;
+  onClose: () => void;
+  onSkillsAdded: () => void;
+}
+
+const DeveloperSkillsModal: React.FC<DeveloperSkillsModalProps> = ({ isOpen, developer, onClose, onSkillsAdded }) => {
+  const [skillAreas, setSkillAreas] = useState<any[]>([]);
+  const [selectedSkillArea, setSelectedSkillArea] = useState<any>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [showAddSkillModal, setShowAddSkillModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSkillAreas();
+    } else {
+      // Reset state when modal closes
+      setSelectedSkillArea(null);
+      setSkills([]);
+      setSelectedSkills([]);
+    }
+  }, [isOpen]);
+
+  const fetchSkillAreas = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiService.getSkillAreas();
+      setSkillAreas(response.data);
+    } catch (error) {
+      console.error('Error fetching skill areas:', error);
+      toast.error('Failed to fetch skill areas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSkillsForArea = async (skillAreaId: number) => {
+    setIsLoadingSkills(true);
+    try {
+      const response = await apiService.getSkillArea(skillAreaId);
+      setSkills(response.data.skills || []);
+      setSelectedSkillArea(response.data);
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      toast.error('Failed to fetch skills');
+    } finally {
+      setIsLoadingSkills(false);
+    }
+  };
+
+  const toggleSkillSelection = (skillId: number) => {
+    setSelectedSkills(prev => 
+      prev.includes(skillId) 
+        ? prev.filter(id => id !== skillId)
+        : [...prev, skillId]
+    );
+  };
+
+  const handleAddSkills = async () => {
+    if (!developer || selectedSkills.length === 0) {
+      toast.error('Please select at least one skill');
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      await apiService.addDeveloperSkills({
+        dev_id: developer.id,
+        skill_ids: selectedSkills
+      });
+      
+      toast.success('Skills added successfully!');
+      onSkillsAdded();
+      onClose();
+    } catch (error) {
+      console.error('Error adding skills:', error);
+      toast.error('Failed to add skills');
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  if (!isOpen || !developer) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-slate-700"
+      >
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 p-6">
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+              <span className="text-white font-bold text-xl">
+                {developer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              </span>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-1">Add Skills to {developer.name}</h2>
+              <p className="text-white/80 text-lg">Select skills to add to this developer's profile</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 border-3 border-slate-600/30 border-t-emerald-500 rounded-full animate-spin mb-4 mx-auto" />
+                <p className="text-slate-400">Loading skill areas...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Skill Areas Selection */}
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-blue-400" />
+                  Select Skill Area
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {skillAreas.map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => fetchSkillsForArea(area.id)}
+                      className={`p-4 rounded-lg border transition-all ${
+                        selectedSkillArea?.id === area.id
+                          ? 'bg-blue-500/20 border-blue-500 text-blue-300'
+                          : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                          <Tags className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-semibold">{area.name}</h4>
+                          <p className="text-sm text-gray-400 opacity-70">
+                            {area.skills_count || 0} skills
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skills Selection */}
+              {selectedSkillArea && (
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white flex items-center">
+                      <Tags className="w-5 h-5 mr-2 text-violet-400" />
+                      Skills in {selectedSkillArea.name}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          const allSkillIds = skills.map(skill => skill.skill_id);
+                          setSelectedSkills(prev => {
+                            const newSelection = [...prev];
+                            allSkillIds.forEach(id => {
+                              if (!newSelection.includes(id)) {
+                                newSelection.push(id);
+                              }
+                            });
+                            return newSelection;
+                          });
+                        }}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center space-x-1 text-sm"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Select All</span>
+                      </button>
+                      <button
+                        onClick={() => setShowAddSkillModal(true)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add New Skill</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {isLoadingSkills ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-8 h-8 border-2 border-slate-600/30 border-t-violet-500 rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {skills.map((skill) => (
+                        <button
+                          key={skill.id}
+                          onClick={() => toggleSkillSelection(skill.skill_id)}
+                          className={`p-3 rounded-lg border transition-all flex items-center space-x-3 ${
+                            selectedSkills.includes(skill.skill_id)
+                              ? 'bg-violet-500/20 border-violet-500 text-violet-300'
+                              : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
+                          }`}
+                        >
+                          <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                            selectedSkills.includes(skill.skill_id)
+                              ? 'bg-violet-500 border-violet-500'
+                              : 'border-slate-400'
+                          }`}>
+                            {selectedSkills.includes(skill.skill_id) && (
+                              <X className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <span className="font-medium">{skill.skill_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Selected Skills Summary */}
+              {selectedSkills.length > 0 && (
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                    <Tags className="w-5 h-5 mr-2 text-emerald-400" />
+                    Selected Skills ({selectedSkills.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSkills.map((skillId) => {
+                      const skill = skills.find(s => s.skill_id === skillId);
+                      return skill ? (
+                        <span
+                          key={skillId}
+                          className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-sm border border-emerald-500/30"
+                        >
+                          {skill.skill_name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end space-x-3 p-6 border-t border-slate-700">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddSkills}
+            disabled={selectedSkills.length === 0 || isAdding}
+            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center space-x-2"
+          >
+            {isAdding ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Add Skills</span>
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Add Skill Modal */}
+      <AddSkillModal
+        isOpen={showAddSkillModal}
+        onClose={() => setShowAddSkillModal(false)}
+        onSkillAdded={() => {
+          setShowAddSkillModal(false);
+          if (selectedSkillArea) {
+            fetchSkillsForArea(selectedSkillArea.id);
+          }
+        }}
+      />
+    </div>
+  );
+};
+
+const AddSkillModal: React.FC<{ isOpen: boolean; onClose: () => void; onSkillAdded: () => void }> = ({ isOpen, onClose, onSkillAdded }) => {
+  const [skillAreas, setSkillAreas] = useState<any[]>([]);
+  const [selectedSkillAreaId, setSelectedSkillAreaId] = useState<number | null>(null);
+  const [newSkillArea, setNewSkillArea] = useState<string>('');
+  const [skills, setSkills] = useState<string>('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSkillAreas();
+    } else {
+      // Reset form when modal closes
+      setSelectedSkillAreaId(null);
+      setNewSkillArea('');
+      setSkills('');
+    }
+  }, [isOpen]);
+
+  const fetchSkillAreas = async () => {
+    try {
+      const response = await apiService.getSkillAreas();
+      setSkillAreas(response.data);
+    } catch (error) {
+      console.error('Error fetching skill areas:', error);
+      toast.error('Failed to fetch skill areas');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!skills.trim()) {
+      toast.error('Please enter at least one skill');
+      return;
+    }
+
+    if (!selectedSkillAreaId && !newSkillArea.trim()) {
+      toast.error('Please select an existing skill area or create a new one');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const requestData: any = {
+        skills: skills
+      };
+
+      if (selectedSkillAreaId) {
+        // If user selected an existing skill area, send the skill_id
+        requestData.skill_id = selectedSkillAreaId;
+      } else {
+        // If user is creating a new skill area, send the skill_area name
+        requestData.skill_area = newSkillArea;
+      }
+
+      await apiService.addSkillsToSkillArea(requestData);
+      toast.success('Skills added successfully!');
+      
+      // Refresh skill areas data to get updated counts
+      await fetchSkillAreas();
+      
+      // Reset the selected skill area so user can see fresh data
+      setSelectedSkillAreaId(null);
+      setNewSkillArea('');
+      setSkills('');
+      
+      toast.success('Skill areas data refreshed!');
+      onSkillAdded();
+    } catch (error) {
+      console.error('Error adding skills:', error);
+      toast.error('Failed to add skills');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Add New Skills</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-300" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Select Existing Skill Area
+              </label>
+              <select
+                value={selectedSkillAreaId || ''}
+                onChange={(e) => {
+                  const value = e.target.value ? parseInt(e.target.value) : null;
+                  setSelectedSkillAreaId(value);
+                  if (value) {
+                    setNewSkillArea(''); // Clear new skill area if existing one is selected
+                  }
+                }}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Choose a skill area...</option>
+                {skillAreas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="text-center text-slate-400">OR</div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Create New Skill Area
+              </label>
+              <input
+                type="text"
+                value={newSkillArea}
+                onChange={(e) => {
+                  setNewSkillArea(e.target.value);
+                  if (e.target.value.trim()) {
+                    setSelectedSkillAreaId(null); // Clear existing selection if new one is entered
+                  }
+                }}
+                placeholder="Enter new skill area name"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Skills (comma-separated)
+              </label>
+              <textarea
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                placeholder="e.g., React, Node.js, Python"
+                rows={3}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreating || (!selectedSkillAreaId && !newSkillArea.trim())}
+                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center justify-center"
+              >
+                {isCreating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Skills
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const DeveloperCard: React.FC<{ 
   developer: Developer; 
   onEdit: (developer: Developer) => void;
   onDelete: (id: number) => void;
   onView: (developer: Developer) => void;
-}> = ({ developer, onEdit, onDelete, onView }) => {
+  onAddSkills: (developer: Developer) => void;
+}> = ({ developer, onEdit, onDelete, onView, onAddSkills }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -867,18 +1352,28 @@ const DeveloperCard: React.FC<{
           <button
             onClick={() => onView(developer)}
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-600/50 rounded-lg transition-all duration-200"
+            title="View Details"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
+            onClick={() => onAddSkills(developer)}
+            className="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg transition-all duration-200"
+            title="Add Skills"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => onEdit(developer)}
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-600/50 rounded-lg transition-all duration-200"
+            title="Edit Developer"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(developer.id)}
             className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-200"
+            title="Delete Developer"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -929,6 +1424,8 @@ const DevelopersManagement: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [viewDeveloperId, setViewDeveloperId] = useState<number | undefined>(undefined);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const [selectedDeveloper, setSelectedDeveloper] = useState<Developer | null>(null);
 
   useEffect(() => {
     fetchDevelopers();
@@ -976,6 +1473,16 @@ const DevelopersManagement: React.FC = () => {
   const handleViewDeveloper = (developer: Developer) => {
     setViewDeveloperId(developer.id);
     setIsDetailsOpen(true);
+  };
+
+  const handleAddSkills = (developer: Developer) => {
+    setSelectedDeveloper(developer);
+    setIsSkillsModalOpen(true);
+  };
+
+  const handleSkillsAdded = async () => {
+    // Refresh the developers list to get updated skill data
+    await fetchDevelopers();
   };
 
   const handleSaveDeveloper = async (developer: Developer) => {
@@ -1057,6 +1564,7 @@ const DevelopersManagement: React.FC = () => {
                   onEdit={handleEditDeveloper}
                   onDelete={handleDeleteDeveloper}
                   onView={handleViewDeveloper}
+                  onAddSkills={handleAddSkills}
                 />
               ))}
             </AnimatePresence>
@@ -1121,6 +1629,14 @@ const DevelopersManagement: React.FC = () => {
         isOpen={isDetailsOpen}
         developerId={viewDeveloperId}
         onClose={() => setIsDetailsOpen(false)}
+      />
+
+      {/* Developer Skills Modal */}
+      <DeveloperSkillsModal
+        isOpen={isSkillsModalOpen}
+        developer={selectedDeveloper}
+        onClose={() => setIsSkillsModalOpen(false)}
+        onSkillsAdded={handleSkillsAdded}
       />
     </div>
   );
