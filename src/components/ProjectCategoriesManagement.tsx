@@ -713,7 +713,6 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({ isOpen, onClose, onSkillA
   const [selectedSkillAreaId, setSelectedSkillAreaId] = useState<number | null>(null);
   const [newSkillArea, setNewSkillArea] = useState<string>('');
   const [skills, setSkills] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
@@ -728,15 +727,12 @@ const AddSkillModal: React.FC<AddSkillModalProps> = ({ isOpen, onClose, onSkillA
   }, [isOpen]);
 
   const fetchSkillAreas = async () => {
-    setIsLoading(true);
     try {
       const response = await apiService.getSkillAreas();
       setSkillAreas(response.data);
     } catch (error) {
       console.error('Error fetching skill areas:', error);
       toast.error('Failed to fetch skill areas');
-    } finally {
-      setIsLoading(false);
     }
   };
 

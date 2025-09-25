@@ -242,7 +242,7 @@ class ApiService {
     return response.data;
   }
 
-  async createProjectCategory(data: CreateProjectCategoryRequest): Promise<ApiResponse<ProjectCategory>> {
+  async createProjectCategory(data: CreateProjectCategoryRequest | { name: string; description: string; use_cases: string[] }): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.post<ApiResponse<ProjectCategory>>(
       '/api/projects/',
       data
@@ -290,13 +290,6 @@ class ApiService {
     return response.data;
   }
 
-  async createProjectCategory(data: { name: string; description: string; use_cases: string[] }): Promise<ApiResponse<any>> {
-    const response = await this.api.post<ApiResponse<any>>(
-      '/api/projects/',
-      data
-    );
-    return response.data;
-  }
 
   // Agent API
   async queryAgent(data: AgentQueryRequest): Promise<AgentResponse> {
