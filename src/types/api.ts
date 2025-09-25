@@ -54,6 +54,27 @@ export interface ProjectCategory {
   skills?: SkillArea[];
 }
 
+// API Response types for detailed project category data
+export interface ProjectCategorySkillArea {
+  skill_area_id: number;
+  skill_area_name: string;
+  skills: ProjectCategorySkill[];
+}
+
+export interface ProjectCategorySkill {
+  skill_id: number;
+  skill_name: string;
+}
+
+export interface DetailedProjectCategory {
+  id: number;
+  name: string;
+  description?: string;
+  use_cases: string[];
+  created_at?: string;
+  skills?: ProjectCategorySkillArea[];
+}
+
 export interface ApiResponse<T> {
   details: string;
   data: T;

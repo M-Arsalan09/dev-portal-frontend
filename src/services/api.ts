@@ -5,6 +5,7 @@ import type {
   SkillArea,
   DeveloperProject,
   ProjectCategory,
+  DetailedProjectCategory,
   ApiResponse,
   AgentResponse,
   CreateDeveloperRequest,
@@ -26,7 +27,7 @@ class ApiService {
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     this.api = axios.create({
       baseURL: this.baseURL,
-      timeout: 120000, // Increased to 2 minutes
+      timeout: 300000, // Increased to 5 minutes
       headers: {
         'Content-Type': 'application/json',
       },
@@ -234,8 +235,8 @@ class ApiService {
     return response.data;
   }
 
-  async getProjectCategory(id: number): Promise<ApiResponse<ProjectCategory>> {
-    const response = await this.api.get<ApiResponse<ProjectCategory>>(
+  async getProjectCategory(id: number): Promise<ApiResponse<DetailedProjectCategory>> {
+    const response = await this.api.get<ApiResponse<DetailedProjectCategory>>(
       `/api/projects/${id}/`
     );
     return response.data;
@@ -257,9 +258,41 @@ class ApiService {
     return response.data;
   }
 
+  async updateProjectCategoryDescription(id: number, description: string): Promise<ApiResponse<ProjectCategory>> {
+    const response = await this.api.put<ApiResponse<ProjectCategory>>(
+      `/api/projects/${id}/`,
+      { description }
+    );
+    return response.data;
+  }
+
+  async updateProjectCategoryUseCases(id: number, use_cases: string[]): Promise<ApiResponse<ProjectCategory>> {
+    const response = await this.api.put<ApiResponse<ProjectCategory>>(
+      `/api/projects/${id}/`,
+      { use_cases }
+    );
+    return response.data;
+  }
+
   async addRequiredSkills(data: AddRequiredSkillsRequest): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/projects/add_required_skills/',
+      data
+    );
+    return response.data;
+  }
+
+  async addSkillsToSkillArea(data: { skill_area?: string; skills?: string; skill_id?: number }): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>(
+      '/api/skill-areas/add_skills/',
+      data
+    );
+    return response.data;
+  }
+
+  async createProjectCategory(data: { name: string; description: string; use_cases: string[] }): Promise<ApiResponse<any>> {
+    const response = await this.api.post<ApiResponse<any>>(
+      '/api/projects/',
       data
     );
     return response.data;

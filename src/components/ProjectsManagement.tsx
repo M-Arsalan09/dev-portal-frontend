@@ -310,18 +310,32 @@ interface ProjectModalProps {
   onClose: () => void;
   project?: DeveloperProject;
   onSave: (project: DeveloperProject) => void;
+  onNext: (projectData: any) => void;
+  showCategoryModal: boolean;
+  setShowCategoryModal: (show: boolean) => void;
+  onCategoryCreated: (category: any) => void;
 }
 
-const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, onSave }) => {
+interface ProjectSkillsSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  projectData: any;
+  onSave: (project: DeveloperProject) => void;
+}
+
+const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, onSave, onNext, showCategoryModal, setShowCategoryModal, onCategoryCreated }) => {
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateProjectRequest>();
   const [isLoading, setIsLoading] = useState(false);
   const [developers, setDevelopers] = useState<Developer[]>([]);
+  const [projectCategories, setProjectCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [techStack, setTechStack] = useState<string[]>([]);
   const [newTech, setNewTech] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       fetchDevelopers();
+      fetchProjectCategories();
     }
   }, [isOpen]);
 
@@ -360,6 +374,15 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, o
     }
   };
 
+  const fetchProjectCategories = async () => {
+    try {
+      const response = await apiService.getProjectCategories();
+      setProjectCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching project categories:', error);
+    }
+  };
+
 
   const addTech = () => {
     if (newTech.trim() && !techStack.includes(newTech.trim())) {
@@ -376,20 +399,40 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, o
     setValue('tech_stack', updatedStack);
   };
 
+  const toggleCategorySelection = (categoryId: number) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const handleCategoryCreated = (newCategory: any) => {
+    setProjectCategories(prev => [...prev, newCategory]);
+    setSelectedCategories(prev => [...prev, newCategory.id]);
+    onCategoryCreated(newCategory);
+  };
+
   const onSubmit = async (data: CreateProjectRequest) => {
     setIsLoading(true);
     try {
-      const projectData = { ...data, tech_stack: techStack };
-      let result;
-      if (project) {
-        result = await apiService.updateDeveloperProject(project.id, projectData);
-      } else {
-        result = await apiService.createDeveloperProject(projectData);
-      }
+      const projectData = { 
+        ...data, 
+        tech_stack: techStack,
+        project_categories: selectedCategories
+      };
       
-      toast.success(project ? 'Project updated successfully!' : 'Project created successfully!');
-      onSave(result.data);
-      onClose();
+      if (project) {
+        // For editing existing projects, create directly
+        const result = await apiService.updateDeveloperProject(project.id, projectData);
+        toast.success('Project updated successfully!');
+        onSave(result.data);
+        onClose();
+      } else {
+        // For new projects, go to skills selection step
+        onNext(projectData);
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving project:', error);
     } finally {
@@ -465,6 +508,70 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, o
                 placeholder="e.g., Personal Project, Client Work, Open Source"
               />
               {errors.project_origin && <p className="text-red-400 text-sm mt-2">{errors.project_origin.message}</p>}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-white">Project Categories</label>
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryModal(true)}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center space-x-1 text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create New</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-32 overflow-y-auto">
+                {projectCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => toggleCategorySelection(category.id)}
+                    className={`p-3 rounded-lg border transition-all text-left ${
+                      selectedCategories.includes(category.id)
+                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                        : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        selectedCategories.includes(category.id)
+                          ? 'bg-purple-500 border-purple-500'
+                          : 'border-slate-400'
+                      }`}>
+                        {selectedCategories.includes(category.id) && (
+                          <X className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm">{category.name}</h4>
+                        {category.description && (
+                          <p className="text-xs text-gray-400 line-clamp-1">{category.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {selectedCategories.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-slate-400 mb-1">Selected categories:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedCategories.map((categoryId) => {
+                      const category = projectCategories.find(c => c.id === categoryId);
+                      return category ? (
+                        <span
+                          key={categoryId}
+                          className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs border border-purple-500/30"
+                        >
+                          {category.name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -566,7 +673,632 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, o
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    Create
+                    {project ? 'Update' : 'Next: Select Skills'}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+
+      {/* Project Category Modal */}
+      <ProjectCategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onCategoryCreated={handleCategoryCreated}
+      />
+    </div>
+  );
+};
+
+interface ProjectCategoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCategoryCreated: (category: any) => void;
+}
+
+const ProjectCategoryModal: React.FC<ProjectCategoryModalProps> = ({ isOpen, onClose, onCategoryCreated }) => {
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [isCreating, setIsCreating] = useState(false);
+  const [useCases, setUseCases] = useState<string[]>([]);
+  const [newUseCase, setNewUseCase] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      reset();
+      setUseCases([]);
+      setNewUseCase('');
+    }
+  }, [isOpen, reset]);
+
+  const addUseCase = () => {
+    if (newUseCase.trim() && !useCases.includes(newUseCase.trim())) {
+      setUseCases(prev => [...prev, newUseCase.trim()]);
+      setNewUseCase('');
+    }
+  };
+
+  const removeUseCase = (useCase: string) => {
+    setUseCases(prev => prev.filter(uc => uc !== useCase));
+  };
+
+  const onSubmit = async (data: any) => {
+    if (useCases.length === 0) {
+      toast.error('Please add at least one use case');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const categoryData = {
+        ...data,
+        use_cases: useCases
+      };
+
+      const result = await apiService.createProjectCategory(categoryData);
+      toast.success('Project category created successfully!');
+      onCategoryCreated(result.data);
+    } catch (error) {
+      console.error('Error creating project category:', error);
+      toast.error('Failed to create project category');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Create Project Category</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-300" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Category Name
+              </label>
+              <input
+                {...register('name', { required: 'Category name is required' })}
+                placeholder="e.g., Automation, Web Development"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.name && <p className="text-red-400 text-sm mt-1">{String(errors.name.message)}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Description
+              </label>
+              <textarea
+                {...register('description', { required: 'Description is required' })}
+                placeholder="Describe what this project category involves..."
+                rows={3}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {errors.description && <p className="text-red-400 text-sm mt-1">{String(errors.description.message)}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Use Cases
+              </label>
+              <div className="flex space-x-2 mb-2">
+                <input
+                  value={newUseCase}
+                  onChange={(e) => setNewUseCase(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addUseCase())}
+                  placeholder="Add a use case..."
+                  className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={addUseCase}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="space-y-2">
+                {useCases.map((useCase, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-slate-700/50 rounded-lg">
+                    <span className="text-slate-300 text-sm">{useCase}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeUseCase(useCase)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreating || useCases.length === 0}
+                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center justify-center"
+              >
+                {isCreating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Category
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const ProjectSkillsSelectionModal: React.FC<ProjectSkillsSelectionModalProps> = ({ isOpen, onClose, projectData, onSave }) => {
+  const [skillAreas, setSkillAreas] = useState<any[]>([]);
+  const [selectedSkillArea, setSelectedSkillArea] = useState<any>(null);
+  const [skills, setSkills] = useState<any[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [showAddSkillModal, setShowAddSkillModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSkillAreas();
+    }
+  }, [isOpen]);
+
+  const fetchSkillAreas = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiService.getSkillAreas();
+      setSkillAreas(response.data);
+    } catch (error) {
+      console.error('Error fetching skill areas:', error);
+      toast.error('Failed to fetch skill areas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchSkillsForArea = async (skillAreaId: number) => {
+    setIsLoadingSkills(true);
+    try {
+      const response = await apiService.getSkillArea(skillAreaId);
+      setSkills(response.data.skills || []);
+      setSelectedSkillArea(response.data);
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      toast.error('Failed to fetch skills');
+    } finally {
+      setIsLoadingSkills(false);
+    }
+  };
+
+  const toggleSkillSelection = (skillId: number) => {
+    setSelectedSkills(prev => 
+      prev.includes(skillId) 
+        ? prev.filter(id => id !== skillId)
+        : [...prev, skillId]
+    );
+  };
+
+  const handleCreateProject = async () => {
+    if (selectedSkills.length === 0) {
+      toast.error('Please select at least one skill');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const finalProjectData = {
+        ...projectData,
+        skills: selectedSkills
+      };
+
+      const result = await apiService.createDeveloperProject(finalProjectData);
+      toast.success('Project created successfully!');
+      onSave(result.data);
+      onClose();
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-slate-700"
+      >
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 p-6">
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+              <Tag className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-white mb-1">Select Project Skills</h2>
+              <p className="text-white/80 text-lg">Choose skills used in "{projectData.name}"</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="w-12 h-12 border-3 border-slate-600/30 border-t-emerald-500 rounded-full animate-spin mb-4 mx-auto" />
+                <p className="text-slate-400">Loading skill areas...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Skill Areas Selection */}
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                  <User className="w-5 h-5 mr-2 text-blue-400" />
+                  Select Skill Area
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {skillAreas.map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => fetchSkillsForArea(area.id)}
+                      className={`p-4 rounded-lg border transition-all ${
+                        selectedSkillArea?.id === area.id
+                          ? 'bg-blue-500/20 border-blue-500 text-blue-300'
+                          : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                          <Tag className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <h4 className="font-semibold">{area.name}</h4>
+                          <p className="text-sm text-gray-400 opacity-70">
+                            {area.skills_count || 0} skills
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skills Selection */}
+              {selectedSkillArea && (
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white flex items-center">
+                      <Tag className="w-5 h-5 mr-2 text-violet-400" />
+                      Skills in {selectedSkillArea.name}
+                    </h3>
+                    <button
+                      onClick={() => setShowAddSkillModal(true)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New Skill</span>
+                    </button>
+                  </div>
+
+                  {isLoadingSkills ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-8 h-8 border-2 border-slate-600/30 border-t-violet-500 rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {skills.map((skill) => (
+                        <button
+                          key={skill.id}
+                          onClick={() => toggleSkillSelection(skill.skill_id)}
+                          className={`p-3 rounded-lg border transition-all flex items-center space-x-3 ${
+                            selectedSkills.includes(skill.skill_id)
+                              ? 'bg-violet-500/20 border-violet-500 text-violet-300'
+                              : 'bg-slate-700/30 border-slate-600/30 text-slate-300 hover:bg-slate-700/50'
+                          }`}
+                        >
+                          <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                            selectedSkills.includes(skill.skill_id)
+                              ? 'bg-violet-500 border-violet-500'
+                              : 'border-slate-400'
+                          }`}>
+                            {selectedSkills.includes(skill.skill_id) && (
+                              <X className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                          <span className="font-medium">{skill.skill_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Selected Skills Summary */}
+              {selectedSkills.length > 0 && (
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                    <Tag className="w-5 h-5 mr-2 text-emerald-400" />
+                    Selected Skills ({selectedSkills.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSkills.map((skillId) => {
+                      const skill = skills.find(s => s.skill_id === skillId);
+                      return skill ? (
+                        <span
+                          key={skillId}
+                          className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-sm border border-emerald-500/30"
+                        >
+                          {skill.skill_name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end space-x-3 p-6 border-t border-slate-700">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateProject}
+            disabled={selectedSkills.length === 0 || isCreating}
+            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center space-x-2"
+          >
+            {isCreating ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Create Project</span>
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Add Skill Modal */}
+      <AddSkillModal
+        isOpen={showAddSkillModal}
+        onClose={() => setShowAddSkillModal(false)}
+        onSkillAdded={() => {
+          setShowAddSkillModal(false);
+          if (selectedSkillArea) {
+            fetchSkillsForArea(selectedSkillArea.id);
+          }
+        }}
+      />
+    </div>
+  );
+};
+
+const AddSkillModal: React.FC<{ isOpen: boolean; onClose: () => void; onSkillAdded: () => void }> = ({ isOpen, onClose, onSkillAdded }) => {
+  const [skillAreas, setSkillAreas] = useState<any[]>([]);
+  const [selectedSkillAreaId, setSelectedSkillAreaId] = useState<number | null>(null);
+  const [newSkillArea, setNewSkillArea] = useState<string>('');
+  const [skills, setSkills] = useState<string>('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchSkillAreas();
+    } else {
+      // Reset form when modal closes
+      setSelectedSkillAreaId(null);
+      setNewSkillArea('');
+      setSkills('');
+    }
+  }, [isOpen]);
+
+  const fetchSkillAreas = async () => {
+    try {
+      const response = await apiService.getSkillAreas();
+      setSkillAreas(response.data);
+    } catch (error) {
+      console.error('Error fetching skill areas:', error);
+      toast.error('Failed to fetch skill areas');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!skills.trim()) {
+      toast.error('Please enter at least one skill');
+      return;
+    }
+
+    if (!selectedSkillAreaId && !newSkillArea.trim()) {
+      toast.error('Please select an existing skill area or create a new one');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const requestData: any = {
+        skills: skills
+      };
+
+      if (selectedSkillAreaId) {
+        // If user selected an existing skill area, send the skill_id
+        requestData.skill_id = selectedSkillAreaId;
+      } else {
+        // If user is creating a new skill area, send the skill_area name
+        requestData.skill_area = newSkillArea;
+      }
+
+      await apiService.addSkillsToSkillArea(requestData);
+      toast.success('Skills added successfully!');
+      
+      // Refresh skill areas data to get updated counts
+      await fetchSkillAreas();
+      
+      // Reset the selected skill area so user can see fresh data
+      setSelectedSkillAreaId(null);
+      setNewSkillArea('');
+      setSkills('');
+      
+      toast.success('Skill areas data refreshed!');
+      onSkillAdded();
+    } catch (error) {
+      console.error('Error adding skills:', error);
+      toast.error('Failed to add skills');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700"
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-white">Add New Skills</h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-300" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Select Existing Skill Area
+              </label>
+              <select
+                value={selectedSkillAreaId || ''}
+                onChange={(e) => {
+                  const value = e.target.value ? parseInt(e.target.value) : null;
+                  setSelectedSkillAreaId(value);
+                  if (value) {
+                    setNewSkillArea(''); // Clear new skill area if existing one is selected
+                  }
+                }}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="">Choose a skill area...</option>
+                {skillAreas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="text-center text-slate-400">OR</div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Create New Skill Area
+              </label>
+              <input
+                type="text"
+                value={newSkillArea}
+                onChange={(e) => {
+                  setNewSkillArea(e.target.value);
+                  if (e.target.value.trim()) {
+                    setSelectedSkillAreaId(null); // Clear existing selection if new one is entered
+                  }
+                }}
+                placeholder="Enter new skill area name"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Skills (comma-separated)
+              </label>
+              <textarea
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                placeholder="e.g., React, Node.js, Python"
+                rows={3}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreating || (!selectedSkillAreaId && !newSkillArea.trim())}
+                className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center justify-center"
+              >
+                {isCreating ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Skills
                   </>
                 )}
               </button>
@@ -716,7 +1448,10 @@ const ProjectsManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<DeveloperProject | undefined>();
+  const [projectData, setProjectData] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [developerFilter, setDeveloperFilter] = useState('');
@@ -763,6 +1498,16 @@ const ProjectsManagement: React.FC = () => {
   const handleViewProject = (project: DeveloperProject) => {
     setViewProjectId(project.id);
     setIsDetailsOpen(true);
+  };
+
+  const handleNextToSkills = (data: any) => {
+    setProjectData(data);
+    setIsSkillsModalOpen(true);
+  };
+
+  const handleCategoryCreated = () => {
+    setShowCategoryModal(false);
+    // The ProjectModal will handle updating its own state
   };
 
   const handleSaveProject = (project: DeveloperProject) => {
@@ -903,6 +1648,18 @@ const ProjectsManagement: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         project={selectedProject}
+        onSave={handleSaveProject}
+        onNext={handleNextToSkills}
+        showCategoryModal={showCategoryModal}
+        setShowCategoryModal={setShowCategoryModal}
+        onCategoryCreated={handleCategoryCreated}
+      />
+
+      {/* Project Skills Selection Modal */}
+      <ProjectSkillsSelectionModal
+        isOpen={isSkillsModalOpen}
+        onClose={() => setIsSkillsModalOpen(false)}
+        projectData={projectData}
         onSave={handleSaveProject}
       />
 

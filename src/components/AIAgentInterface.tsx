@@ -10,7 +10,9 @@ import {
   Search,
   Users,
   CheckCircle,
-  X
+  X,
+  Bot,
+  FileText
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -100,8 +102,8 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
                   ? 'bg-blue-600 text-white' 
                   : 'bg-white/10 text-white border border-white/20'
               }`}>
-                <p className="text-sm">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
+                <p className="text-sm text-white">{message.content}</p>
+                <p className="text-xs opacity-70 mt-1 text-white">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
               </div>
@@ -405,6 +407,8 @@ const ProjectAnalysis: React.FC<ProjectAnalysisProps> = ({ onAnalyze }) => {
 };
 
 const AIAgentInterface: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'agent' | 'analysis'>('analysis');
+
   const handleQuery = async (query: string): Promise<AgentResponse> => {
     try {
       const response = await apiService.queryAgent({ query });
@@ -440,79 +444,64 @@ const AIAgentInterface: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">AI Chat</h3>
-              <p className="text-white/70 text-sm">Ask questions and get instant answers</p>
-            </div>
+      {/* Tabs */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-1 border border-white/20">
+          <div className="flex space-x-1">
+            <button
+              onClick={() => setActiveTab('agent')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                activeTab === 'agent'
+                  ? 'bg-white/20 text-white shadow-lg'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Bot className="w-5 h-5" />
+              <span>AI Agent</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('analysis')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                activeTab === 'analysis'
+                  ? 'bg-white/20 text-white shadow-lg'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>Project Analysis</span>
+            </button>
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <Search className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">Analysis</h3>
-              <p className="text-white/70 text-sm">Project requirements analysis</p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-bold text-white">Matching</h3>
-              <p className="text-white/70 text-sm">Developer recommendations</p>
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        {/* Query Chat */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <QueryChat onQuery={handleQuery} />
-        </motion.div>
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        {activeTab === 'agent' && (
+          <motion.div
+            key="agent"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            <QueryChat onQuery={handleQuery} />
+          </motion.div>
+        )}
 
-        {/* Project Analysis */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <ProjectAnalysis onAnalyze={handleProjectAnalysis} />
-        </motion.div>
-      </div>
+        {activeTab === 'analysis' && (
+          <motion.div
+            key="analysis"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            <ProjectAnalysis onAnalyze={handleProjectAnalysis} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
