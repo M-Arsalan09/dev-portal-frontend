@@ -420,8 +420,8 @@ const ProjectCategoriesManagement: React.FC = () => {
     }
   };
 
-  const handleViewCategory = (category: ProjectCategory) => {
-    toast.info('View functionality coming soon!');
+  const handleViewCategory = () => {
+    toast('View functionality coming soon!');
   };
 
   const handleSaveCategory = (category: ProjectCategory) => {

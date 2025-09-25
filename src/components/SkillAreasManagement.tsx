@@ -7,10 +7,8 @@ import {
   Search, 
   Filter, 
   Tags, 
-  Calendar,
   X,
   Save,
-  Eye,
   ChevronDown,
   ChevronRight,
   Code
@@ -18,7 +16,7 @@ import {
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import apiService from '../services/api';
-import type { SkillArea, CreateSkillAreaRequest, AddSkillsToAreaRequest } from '../types/api';
+import type { SkillArea, CreateSkillAreaRequest } from '../types/api';
 
 interface SkillAreaModalProps {
   isOpen: boolean;
@@ -234,7 +232,7 @@ const SkillAreaCard: React.FC<{
   onEdit: (skillArea: SkillArea) => void;
   onDelete: (id: number) => void;
   onAddSkills: (skillArea: SkillArea) => void;
-  onView: (skillArea: SkillArea) => void;
+  onView: () => void;
 }> = ({ skillArea, onEdit, onDelete, onAddSkills, onView }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [detailedSkillArea, setDetailedSkillArea] = useState<SkillArea | null>(null);
@@ -325,11 +323,11 @@ const SkillAreaCard: React.FC<{
                   <div className="flex flex-wrap gap-2">
                     {detailedSkillArea.skills.map((skill) => (
                       <span
-                        key={skill.skill_id}
+                        key={skill.id}
                         className="inline-flex items-center px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm"
                       >
                         <Code className="w-3 h-3 mr-1" />
-                        {skill.skill_name}
+                        {skill.name}
                       </span>
                     ))}
                   </div>
@@ -422,8 +420,8 @@ const SkillAreasManagement: React.FC = () => {
     setIsAddSkillsModalOpen(true);
   };
 
-  const handleViewSkillArea = (skillArea: SkillArea) => {
-    toast.info('View functionality coming soon!');
+  const handleViewSkillArea = () => {
+    toast('View functionality coming soon!');
   };
 
   const handleSaveSkillArea = (skillArea: SkillArea) => {

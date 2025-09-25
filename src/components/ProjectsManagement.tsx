@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
-  Edit, 
   Trash2, 
   Search, 
   Filter, 
@@ -10,7 +9,6 @@ import {
   Calendar,
   User,
   Code2,
-  ExternalLink,
   Github,
   FileText,
   Presentation,
@@ -23,7 +21,7 @@ import {
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import apiService from '../services/api';
-import type { DeveloperProject, CreateProjectRequest, Developer, ProjectCategory, Skill } from '../types/api';
+import type { DeveloperProject, CreateProjectRequest, Developer, ProjectCategory } from '../types/api';
 
 interface ProjectDetailsModalProps {
   isOpen: boolean;
@@ -315,17 +313,15 @@ interface ProjectModalProps {
 }
 
 const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, onSave }) => {
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateProjectRequest>();
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateProjectRequest>();
   const [isLoading, setIsLoading] = useState(false);
   const [developers, setDevelopers] = useState<Developer[]>([]);
-  const [categories, setCategories] = useState<ProjectCategory[]>([]);
   const [techStack, setTechStack] = useState<string[]>([]);
   const [newTech, setNewTech] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       fetchDevelopers();
-      fetchCategories();
     }
   }, [isOpen]);
 
@@ -364,14 +360,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ isOpen, onClose, project, o
     }
   };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await apiService.getProjectCategories();
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
 
   const addTech = () => {
     if (newTech.trim() && !techStack.includes(newTech.trim())) {
