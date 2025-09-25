@@ -1,4 +1,17 @@
 // API Types based on the integration guide
+export interface DeveloperLevel {
+  level: number;
+  level_name: string;
+  description: string;
+  skill_breakdown?: {
+    expert: number;
+    advanced: number;
+    beginner: number;
+    basic_knowledge: number;
+    total_skills: number;
+  };
+}
+
 export interface Developer {
   id: number;
   name: string;
@@ -12,6 +25,7 @@ export interface Developer {
   created_at?: string;
   skills?: SkillArea[];
   projects?: DeveloperProject[];
+  overall_level?: DeveloperLevel;
 }
 
 export interface SkillArea {
@@ -26,6 +40,10 @@ export interface Skill {
   name: string;
   skill_area: number;
   created_at?: string;
+  level?: number;
+  level_name?: string;
+  project_count?: number;
+  last_updated?: string;
 }
 
 // Raw API response types for skills (before transformation)
@@ -38,6 +56,10 @@ export interface RawSkillArea {
 export interface RawSkill {
   skill_id: number;
   skill_name: string;
+  level?: number;
+  level_name?: string;
+  project_count?: number;
+  last_updated?: string;
 }
 
 // Raw API response type for developer (before transformation)

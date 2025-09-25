@@ -721,12 +721,64 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
                 </div>
               </div>
 
+              {/* Overall Level Section */}
+              {developer.overall_level && (
+                <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                    <Code2 className="w-5 h-5 mr-2 text-blue-400" />
+                    Overall Skill Level
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-semibold text-white">{developer.overall_level.level_name}</span>
+                      <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium border border-blue-500/30">
+                        Level {developer.overall_level.level}
+                      </span>
+                    </div>
+                    <p className="text-slate-300 text-sm">{developer.overall_level.description}</p>
+                    {developer.overall_level.skill_breakdown && (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                          <div className="text-lg font-bold text-emerald-400">{developer.overall_level.skill_breakdown.expert}</div>
+                          <div className="text-xs text-slate-400">Expert</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                          <div className="text-lg font-bold text-blue-400">{developer.overall_level.skill_breakdown.advanced}</div>
+                          <div className="text-xs text-slate-400">Advanced</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                          <div className="text-lg font-bold text-yellow-400">{developer.overall_level.skill_breakdown.beginner}</div>
+                          <div className="text-xs text-slate-400">Beginner</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                          <div className="text-lg font-bold text-slate-400">{developer.overall_level.skill_breakdown.basic_knowledge}</div>
+                          <div className="text-xs text-slate-400">Basic</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                          <div className="text-lg font-bold text-white">{developer.overall_level.skill_breakdown.total_skills}</div>
+                          <div className="text-xs text-slate-400">Total</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Skills Section */}
               <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                  <Code2 className="w-5 h-5 mr-2 text-violet-400" />
-                  Skills & Expertise
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white flex items-center">
+                    <Tags className="w-5 h-5 mr-2 text-violet-400" />
+                    Skills & Expertise
+                  </h3>
+                  <div className="flex items-center space-x-2 text-xs">
+                    <span className="text-slate-400">Levels:</span>
+                    <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">Expert</span>
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30">Advanced</span>
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/30">Beginner</span>
+                    <span className="px-2 py-1 bg-slate-500/20 text-slate-300 rounded-full border border-slate-500/30">Basic</span>
+                  </div>
+                </div>
                 {developer.skills && developer.skills.length > 0 ? (
                   <div className="space-y-6">
                     {developer.skills.map((area) => (
@@ -737,12 +789,34 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {(area.skills || []).map((skill) => (
-                            <span 
-                              key={skill.id} 
-                              className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gradient-to-r from-slate-600 to-slate-700 text-slate-200 border border-slate-600/50 hover:scale-105 transition-transform"
-                            >
-                              {skill.name?.trim() || 'Unknown Skill'}
-                            </span>
+                            <div key={skill.id} className="flex items-center space-x-2">
+                              <span 
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border hover:scale-105 transition-transform ${
+                                  skill.level_name?.toLowerCase() === 'expert'
+                                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                                    : skill.level_name?.toLowerCase() === 'advanced'
+                                    ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                    : skill.level_name?.toLowerCase() === 'beginner'
+                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                    : 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+                                }`}
+                              >
+                                {skill.name?.trim() || 'Unknown Skill'}
+                              </span>
+                              {skill.level_name && (
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                  skill.level_name.toLowerCase() === 'expert'
+                                    ? 'bg-purple-500/30 text-purple-200'
+                                    : skill.level_name.toLowerCase() === 'advanced'
+                                    ? 'bg-blue-500/30 text-blue-200'
+                                    : skill.level_name.toLowerCase() === 'beginner'
+                                    ? 'bg-yellow-500/30 text-yellow-200'
+                                    : 'bg-slate-500/30 text-slate-200'
+                                }`}>
+                                  {skill.level_name}
+                                </span>
+                              )}
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -1344,7 +1418,23 @@ const DeveloperCard: React.FC<{
             </span>
           </div>
           <div>
-            <h3 className="text-base font-bold text-white mb-1">{developer.name}</h3>
+            <div className="flex items-center space-x-2 mb-1">
+              <h3 className="text-base font-bold text-white">{developer.name}</h3>
+              {developer.overall_level && (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${
+                  developer.overall_level.level_name.toLowerCase() === 'expert'
+                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                    : developer.overall_level.level_name.toLowerCase() === 'advanced'
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : developer.overall_level.level_name.toLowerCase() === 'beginner'
+                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                    : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                }`}>
+                  <Code2 className="w-3 h-3 mr-1" />
+                  {developer.overall_level.level_name}
+                </span>
+              )}
+            </div>
             <p className="text-slate-400 text-sm font-medium">{developer.role}</p>
           </div>
         </div>
