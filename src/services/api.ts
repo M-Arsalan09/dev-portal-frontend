@@ -98,6 +98,7 @@ class ApiService {
         is_available: raw.data.is_available,
         last_updated: raw.data.last_updated,
         created_at: raw.data.created_at,
+        overall_level: raw.data.overall_level,
         // map grouped skills to internal types
         skills: Array.isArray(raw.data?.skills)
           ? raw.data.skills.map((area: RawSkillArea) => ({
@@ -108,6 +109,10 @@ class ApiService {
                     id: s.skill_id,
                     name: s.skill_name,
                     skill_area: area.skill_area_id,
+                    level: s.level,
+                    level_name: s.level_name,
+                    project_count: s.project_count,
+                    last_updated: s.last_updated,
                   }))
                 : [],
             }))
