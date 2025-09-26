@@ -792,9 +792,6 @@ const DeveloperDetailsModal: React.FC<DeveloperDetailsModalProps> = ({ isOpen, d
                             <div key={skill.id} className="flex items-center space-x-2">
                               <span 
                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border hover:scale-105 transition-transform ${
-                                  console.log("color name"),
-                                  console.log(skill),
-                                  console.log(skill.level_name),
                                   skill.level_name?.toLowerCase() === 'expert'
                                     ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
                                     : skill.level_name?.toLowerCase() === 'advanced'

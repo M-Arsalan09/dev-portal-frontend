@@ -1,3 +1,11 @@
+/**
+ * API Service Module
+ * 
+ * This module provides a centralized service for all API communications
+ * with the backend. It handles authentication, error management, and
+ * data transformation for the DevPortal application.
+ */
+
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import type {
@@ -21,21 +29,44 @@ import type {
   AnalyzeProjectRequest
 } from '../types/api';
 
+/**
+ * Centralized API service class for handling all backend communications
+ * 
+ * Features:
+ * - Automatic authentication token management
+ * - Global error handling with user-friendly messages
+ * - Request/response interceptors for consistent behavior
+ * - Data transformation for normalized API responses
+ */
 class ApiService {
   private api: ReturnType<typeof axios.create>;
   private baseURL: string;
 
+  /**
+   * Initialize the API service with configuration and interceptors
+   */
   constructor() {
+    // Get API base URL from environment variables or use default
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    
+    // Create axios instance with default configuration
     this.api = axios.create({
       baseURL: this.baseURL,
-      timeout: 300000, // Increased to 5 minutes
+      timeout: 300000, // 5 minutes timeout for long-running operations
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    // Request interceptor to add auth token
+    this.setupInterceptors();
+  }
+
+  /**
+   * Configure request and response interceptors for authentication and error handling
+   * @private
+   */
+  private setupInterceptors(): void {
+    // Request interceptor: Add authentication token to all requests
     this.api.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('access_token');
@@ -49,28 +80,47 @@ class ApiService {
       }
     );
 
-    // Response interceptor for error handling
+    // Response interceptor: Handle global error responses
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          toast.error('Session expired. Please login again.');
-          window.location.href = '/login';
-        } else if (error.response?.status >= 500) {
-          toast.error('Server error. Please try again later.');
-        } else if (error.response?.data?.details) {
-          toast.error(error.response.data.details);
-        } else {
-          toast.error('An error occurred. Please try again.');
-        }
+        this.handleApiError(error);
         return Promise.reject(error);
       }
     );
   }
 
-  // Developers API
+  /**
+   * Handle API errors with appropriate user feedback
+   * @param error - The error object from axios
+   * @private
+   */
+  private handleApiError(error: any): void {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      toast.error('Session expired. Please login again.');
+      window.location.href = '/login';
+    } else if (error.response?.status >= 500) {
+      // Handle server errors
+      toast.error('Server error. Please try again later.');
+    } else if (error.response?.data?.details) {
+      // Handle specific error messages from backend
+      toast.error(error.response.data.details);
+    } else {
+      // Handle generic errors
+      toast.error('An error occurred. Please try again.');
+    }
+  }
+
+  // ==================== DEVELOPERS API ====================
+
+  /**
+   * Fetch paginated list of developers
+   * @param page - Page number for pagination (default: 1)
+   * @returns Promise resolving to paginated developer data
+   */
   async getDevelopers(page = 1): Promise<ApiResponse<Developer[]>> {
     const response = await this.api.get<ApiResponse<Developer[]>>(
       `/api/developers/?page=${page}`
@@ -78,16 +128,23 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Fetch detailed information for a specific developer
+   * @param id - Developer ID
+   * @returns Promise resolving to detailed developer data with normalized structure
+   */
   async getDeveloper(id: number): Promise<ApiResponse<Developer>> {
     const response = await this.api.get<ApiResponse<any>>(
       `/api/developers/${id}/`
     );
 
     const raw = response.data as ApiResponse<any>;
+    
+    // Normalize the API response to match our internal data structure
     const normalized: ApiResponse<Developer> = {
       details: raw.details,
       data: {
-        // copy primitive fields directly
+        // Copy primitive fields directly
         id: raw.data.id,
         name: raw.data.name,
         email: raw.data.email,
@@ -99,7 +156,8 @@ class ApiService {
         last_updated: raw.data.last_updated,
         created_at: raw.data.created_at,
         overall_level: raw.data.overall_level,
-        // map grouped skills to internal types
+        
+        // Transform grouped skills to internal types
         skills: Array.isArray(raw.data?.skills)
           ? raw.data.skills.map((area: RawSkillArea) => ({
               id: area.skill_area_id,
@@ -117,7 +175,8 @@ class ApiService {
                 : [],
             }))
           : [],
-        // map projects possibly using backend names
+          
+        // Transform projects with backend field name mapping
         projects: Array.isArray(raw.data?.projects)
           ? raw.data.projects.map((p: any) => ({
               id: p.project_id ?? p.id,
@@ -142,6 +201,11 @@ class ApiService {
     return normalized;
   }
 
+  /**
+   * Create a new developer profile
+   * @param data - Developer data for creation
+   * @returns Promise resolving to the created developer data
+   */
   async createDeveloper(data: CreateDeveloperRequest): Promise<ApiResponse<Developer>> {
     const response = await this.api.post<ApiResponse<Developer>>(
       '/api/developers/',
@@ -150,6 +214,12 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Update an existing developer profile
+   * @param id - Developer ID to update
+   * @param data - Partial developer data for update
+   * @returns Promise resolving to the updated developer data
+   */
   async updateDeveloper(id: number, data: Partial<CreateDeveloperRequest>): Promise<ApiResponse<Developer>> {
     const response = await this.api.put<ApiResponse<Developer>>(
       `/api/developers/${id}/`,
@@ -158,6 +228,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Add skills to a developer's profile
+   * @param data - Skills data to add
+   * @returns Promise resolving to the updated skills data
+   */
   async addSkillsToDeveloper(data: AddSkillsRequest): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/developers/add_dev_skills/',
@@ -166,7 +241,13 @@ class ApiService {
     return response.data;
   }
 
-  // Skill Areas API
+  // ==================== SKILL AREAS API ====================
+
+  /**
+   * Fetch paginated list of skill areas
+   * @param page - Page number for pagination (default: 1)
+   * @returns Promise resolving to paginated skill area data
+   */
   async getSkillAreas(page = 1): Promise<ApiResponse<SkillArea[]>> {
     const response = await this.api.get<ApiResponse<SkillArea[]>>(
       `/api/skill-areas/?page=${page}`
@@ -174,6 +255,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Fetch detailed information for a specific skill area
+   * @param id - Skill area ID
+   * @returns Promise resolving to detailed skill area data
+   */
   async getSkillArea(id: number): Promise<ApiResponse<SkillArea>> {
     const response = await this.api.get<ApiResponse<any>>(
       `/api/skill-areas/${id}/`
@@ -201,6 +287,11 @@ class ApiService {
     return normalized;
   }
 
+  /**
+   * Create a new skill area
+   * @param data - Skill area data for creation
+   * @returns Promise resolving to the created skill area data
+   */
   async createSkillArea(data: CreateSkillAreaRequest): Promise<ApiResponse<SkillArea>> {
     const response = await this.api.post<ApiResponse<SkillArea>>(
       '/api/skill-areas/',
@@ -209,6 +300,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Add skills to a skill area
+   * @param data - Skills data to add
+   * @returns Promise resolving to the updated skills data
+   */
   async addSkillsToArea(data: AddSkillsToAreaRequest): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/skill-areas/add_skills/',
@@ -217,7 +313,14 @@ class ApiService {
     return response.data;
   }
 
-  // Developer Projects API
+  // ==================== DEVELOPER PROJECTS API ====================
+
+  /**
+   * Fetch paginated list of developer projects with optional filtering
+   * @param page - Page number for pagination (default: 1)
+   * @param developerName - Optional developer name filter
+   * @returns Promise resolving to paginated developer project data
+   */
   async getDeveloperProjects(page = 1, developerName?: string): Promise<ApiResponse<DeveloperProject[]>> {
     const params = new URLSearchParams();
     params.append('page', page.toString());
@@ -231,6 +334,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Fetch detailed information for a specific developer project
+   * @param id - Developer project ID
+   * @returns Promise resolving to detailed developer project data
+   */
   async getDeveloperProject(id: number): Promise<ApiResponse<DeveloperProject>> {
     const response = await this.api.get<ApiResponse<DeveloperProject>>(
       `/api/developer-projects/${id}/`
@@ -238,6 +346,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Create a new developer project
+   * @param data - Project data for creation
+   * @returns Promise resolving to the created developer project data
+   */
   async createDeveloperProject(data: CreateProjectRequest): Promise<ApiResponse<DeveloperProject>> {
     const response = await this.api.post<ApiResponse<DeveloperProject>>(
       '/api/developer-projects/',
@@ -246,6 +359,12 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Update an existing developer project
+   * @param id - Developer project ID to update
+   * @param data - Partial project data for update
+   * @returns Promise resolving to the updated developer project data
+   */
   async updateDeveloperProject(id: number, data: Partial<CreateProjectRequest>): Promise<ApiResponse<DeveloperProject>> {
     const response = await this.api.put<ApiResponse<DeveloperProject>>(
       `/api/developer-projects/${id}/`,
@@ -254,7 +373,13 @@ class ApiService {
     return response.data;
   }
 
-  // Project Categories API
+  // ==================== PROJECT CATEGORIES API ====================
+
+  /**
+   * Fetch paginated list of project categories
+   * @param page - Page number for pagination (default: 1)
+   * @returns Promise resolving to paginated project category data
+   */
   async getProjectCategories(page = 1): Promise<ApiResponse<ProjectCategory[]>> {
     const response = await this.api.get<ApiResponse<ProjectCategory[]>>(
       `/api/projects/?page=${page}`
@@ -262,6 +387,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Fetch detailed information for a specific project category
+   * @param id - Project category ID
+   * @returns Promise resolving to detailed project category data
+   */
   async getProjectCategory(id: number): Promise<ApiResponse<DetailedProjectCategory>> {
     const response = await this.api.get<ApiResponse<DetailedProjectCategory>>(
       `/api/projects/${id}/`
@@ -269,6 +399,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Create a new project category
+   * @param data - Project category data for creation
+   * @returns Promise resolving to the created project category data
+   */
   async createProjectCategory(data: CreateProjectCategoryRequest | { name: string; description: string; use_cases: string[] }): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.post<ApiResponse<ProjectCategory>>(
       '/api/projects/',
@@ -277,6 +412,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Add skills to a developer's profile
+   * @param data - Developer skills data to add
+   * @returns Promise resolving to the updated skills data
+   */
   async addDeveloperSkills(data: { dev_id: number; skill_ids: number[] }): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/developers/add_dev_skills/',
@@ -285,6 +425,12 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Update an existing project category
+   * @param id - Project category ID to update
+   * @param data - Partial project category data for update
+   * @returns Promise resolving to the updated project category data
+   */
   async updateProjectCategory(id: number, data: Partial<CreateProjectCategoryRequest>): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.put<ApiResponse<ProjectCategory>>(
       `/api/projects/${id}/`,
@@ -293,6 +439,12 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Update the description of a project category
+   * @param id - Project category ID to update
+   * @param description - New description for the project category
+   * @returns Promise resolving to the updated project category data
+   */
   async updateProjectCategoryDescription(id: number, description: string): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.put<ApiResponse<ProjectCategory>>(
       `/api/projects/${id}/`,
@@ -301,6 +453,12 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Update the use cases of a project category
+   * @param id - Project category ID to update
+   * @param use_cases - New use cases for the project category
+   * @returns Promise resolving to the updated project category data
+   */
   async updateProjectCategoryUseCases(id: number, use_cases: string[]): Promise<ApiResponse<ProjectCategory>> {
     const response = await this.api.put<ApiResponse<ProjectCategory>>(
       `/api/projects/${id}/`,
@@ -309,6 +467,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Add required skills to a project category
+   * @param data - Required skills data to add
+   * @returns Promise resolving to the updated skills data
+   */
   async addRequiredSkills(data: AddRequiredSkillsRequest): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/projects/add_required_skills/',
@@ -317,6 +480,11 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Add skills to a skill area
+   * @param data - Skills data to add to the skill area
+   * @returns Promise resolving to the updated skills data
+   */
   async addSkillsToSkillArea(data: { skill_area?: string; skills?: string; skill_id?: number }): Promise<ApiResponse<any>> {
     const response = await this.api.post<ApiResponse<any>>(
       '/api/skill-areas/add_skills/',
