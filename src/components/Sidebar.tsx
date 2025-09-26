@@ -37,7 +37,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, 
       aria-label="Sidebar"
     >
       {/* Header */}
-      
       <div className="flex items-center justify-between px-3 py-3 border-b border-slate-700/50">
         <div className="flex items-center gap-2">
           <AnimatePresence>
@@ -48,13 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, 
                 exit={{ opacity: 0, x: -8 }}
                 className="flex items-center gap-2"
               >
-                {/* <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-pink-500 flex items-center justify-center shadow-md">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div> */}
-                
                 <div>
-                  <h1 className="text-lg font-semibold text-white ">DevPortal</h1>
-                  {/* <p className="text-[10px] text-slate-400">Team Management</p> */}
+                  <h1 className="text-lg font-semibold text-white">DevPortal</h1>
                 </div>
               </motion.div>
             )}
@@ -108,29 +102,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, 
           );
         })}
       </nav>
-
-      {/* Footer */}
-      {/* <div className="px-2.5 py-3 border-t border-slate-700/50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-purple-500 flex items-center justify-center shadow-md">
-            <span className="text-white text-sm font-semibold">A</span>
-          </div> */}
-
-          {/* <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -6 }}
-                className="flex-1"
-              >
-                <div className="text-xs font-semibold text-white">Admin User</div>
-                <div className="text-[10px] text-slate-400">admin@devportal.com</div>
-              </motion.div>
-            )}
-          </AnimatePresence> */}
-        {/* </div> */}
-      {/* </div> */}
     </motion.aside>
   );
 };
