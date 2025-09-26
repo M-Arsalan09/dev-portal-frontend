@@ -57,12 +57,12 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
     }
   };
 
-  const quickQuestions = [
-    "Explain how AI works in a few words",
-    "What are the latest trends in web development?",
-    "How can I improve team productivity?",
-    "What skills are most in demand for developers?"
-  ];
+  // const quickQuestions = [
+  //   "Explain how AI works in a few words",
+  //   "What are the latest trends in web development?",
+  //   "How can I improve team productivity?",
+  //   "What skills are most in demand for developers?"
+  // ];
 
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6">
@@ -102,7 +102,9 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
                   ? 'bg-blue-600 text-white' 
                   : 'bg-white/10 text-white border border-white/20'
               }`}>
-                <p className="text-sm text-white">{message.content}</p>
+                <div className="text-sm text-white prose prose-invert max-w-none">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
                 <p className="text-xs opacity-70 mt-1 text-white">
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -127,7 +129,7 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
         </AnimatePresence>
       </div>
 
-      {/* Quick Questions */}
+      {/* Quick Questions
       {messages.length === 0 && (
         <div className="mb-4">
           <p className="text-white/70 text-sm mb-2">Quick questions:</p>
@@ -143,7 +145,7 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="flex space-x-2">
