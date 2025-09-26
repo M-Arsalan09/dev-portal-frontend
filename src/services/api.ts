@@ -69,7 +69,7 @@ class ApiService {
     // Request interceptor: Add authentication token to all requests
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -98,8 +98,10 @@ class ApiService {
   private handleApiError(error: any): void {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userEmail');
       toast.error('Session expired. Please login again.');
       window.location.href = '/login';
     } else if (error.response?.status >= 500) {

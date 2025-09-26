@@ -8,8 +8,11 @@ import {
   Brain,
   X,
   Home,
-  ChevronRight
+  ChevronRight,
+  UserPlus,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface SidebarProps {
   activeTab: string;
@@ -28,6 +31,17 @@ const menuItems = [
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, onToggleCollapse }) => {
+  const { user, logout } = useAuth();
+
+  const handleCreateUser = () => {
+    window.location.href = '/create-user';
+  };
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
   return (
     <motion.aside
       initial={false}
@@ -102,6 +116,82 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, 
           );
         })}
       </nav>
+
+      {/* User Info */}
+      {user && (
+        <div className="border-t border-slate-700/50 p-2">
+          <div className="px-4 py-2 bg-slate-700/30 rounded-lg">
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  className="text-xs text-slate-400"
+                >
+                  <div className="font-medium text-slate-300 truncate">{user.email}</div>
+                  <div className="capitalize">{user.role}</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Actions */}
+      <div className="border-t border-slate-700/50 p-2 space-y-1.5">
+        {/* Create User Button (Admin Only) */}
+        {user?.role === 'admin' && (
+          <motion.button
+            onClick={handleCreateUser}
+            initial={false}
+            whileHover={{ x: 8 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full text-left flex items-center gap-3.5 px-4 py-3 rounded-md transition-colors text-slate-300 hover:bg-green-500/10 hover:text-green-400"
+          >
+            <div className="p-2.5 rounded-md bg-transparent">
+              <UserPlus className="w-5 h-5 text-slate-400" />
+            </div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  className="text-sm font-medium text-slate-300"
+                >
+                  Create User
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        )}
+
+        {/* Logout Button */}
+        <motion.button
+          onClick={handleLogout}
+          initial={false}
+          whileHover={{ x: 8 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full text-left flex items-center gap-3.5 px-4 py-3 rounded-md transition-colors text-slate-300 hover:bg-red-500/10 hover:text-red-400"
+        >
+          <div className="p-2.5 rounded-md bg-transparent">
+            <LogOut className="w-5 h-5 text-slate-400" />
+          </div>
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                className="text-sm font-medium text-slate-300"
+              >
+                Logout
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
     </motion.aside>
   );
 };

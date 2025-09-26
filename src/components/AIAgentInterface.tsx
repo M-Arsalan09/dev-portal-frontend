@@ -72,7 +72,7 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
         </div>
         <div>
           <h2 className="text-xl font-bold text-white">AI Chat Assistant</h2>
-          <p className="text-white/70 text-sm">Ask questions about development, technologies, or team management</p>
+              <p className="text-white/80 text-sm">Ask questions about development, technologies, or team management</p>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
               className="text-center py-8"
             >
               <Brain className="w-12 h-12 text-white/30 mx-auto mb-3" />
-              <p className="text-white/70">Start a conversation with the AI assistant</p>
+              <p className="text-white/80">Start a conversation with the AI assistant</p>
             </motion.div>
           )}
           
@@ -102,7 +102,7 @@ const QueryChat: React.FC<QueryChatProps> = ({ onQuery }) => {
                   ? 'bg-blue-600 text-white' 
                   : 'bg-white/10 text-white border border-white/20'
               }`}>
-                <div className="text-sm text-white prose prose-invert max-w-none">
+                <div className="text-sm text-white prose prose-invert max-w-none prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-code:text-white prose-pre:text-white">
                   <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
                 <p className="text-xs opacity-70 mt-1 text-white">
@@ -223,13 +223,13 @@ const ProjectAnalysis: React.FC<ProjectAnalysisProps> = ({ onAnalyze }) => {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">Project Analysis</h2>
-            <p className="text-white/70 text-sm">Analyze project requirements and get developer recommendations</p>
+            <p className="text-white/80 text-sm">Analyze project requirements and get developer recommendations</p>
           </div>
         </div>
         {analysisResult && (
           <button
             onClick={clearAnalysis}
-            className="flex items-center space-x-2 text-white/70 hover:text-white"
+            className="flex items-center space-x-2 text-white/80 hover:text-white"
           >
             <X className="w-4 h-4" />
             <span>Clear</span>
@@ -339,6 +339,9 @@ const ProjectAnalysis: React.FC<ProjectAnalysisProps> = ({ onAnalyze }) => {
           {/* Project Info */}
           <div className="bg-white/5 rounded-lg p-4">
             <h3 className="text-white font-bold text-lg mb-2">{analysisResult.project_name}</h3>
+            {analysisResult.project_description && (
+              <p className="text-white/80 text-sm mb-4">{analysisResult.project_description}</p>
+            )}
             
             
             {/* Required Skills */}
@@ -383,14 +386,14 @@ const ProjectAnalysis: React.FC<ProjectAnalysisProps> = ({ onAnalyze }) => {
       <Users className="w-5 h-5 text-white" />
       <h4 className="text-white font-medium">Developer Recommendations</h4>
       {analysisResult.total_developers_analyzed && (
-        <span className="text-white/70 text-sm">
+        <span className="text-white/80 text-sm">
           ({analysisResult.total_developers_analyzed} developers analyzed)
         </span>
       )}
     </div>
 
     {/* wrap in div for styling */}
-    <div className="prose prose-invert max-w-none text-white/80 text-sm">
+    <div className="prose prose-invert max-w-none text-white prose-headings:text-white prose-p:text-white prose-strong:text-white prose-em:text-white prose-code:text-white prose-pre:text-white prose-li:text-white prose-ul:text-white prose-ol:text-white text-sm">
       <ReactMarkdown>{analysisResult.analysis}</ReactMarkdown>
     </div>
   </div>
@@ -398,9 +401,9 @@ const ProjectAnalysis: React.FC<ProjectAnalysisProps> = ({ onAnalyze }) => {
 
           {/* Model Info */}
           {analysisResult.model && (
-            <div className="text-center text-white/50 text-xs">
-              Powered by {analysisResult.model}
-            </div>
+          <div className="text-center text-white/70 text-xs">
+            Powered by {analysisResult.model}
+          </div>
           )}
         </motion.div>
       )}
@@ -441,7 +444,7 @@ const AIAgentInterface: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">AI Agent</h1>
-            <p className="text-white/70">Intelligent project analysis and team recommendations</p>
+            <p className="text-white/80">Intelligent project analysis and team recommendations</p>
           </div>
         </div>
       </div>
@@ -455,7 +458,7 @@ const AIAgentInterface: React.FC = () => {
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                 activeTab === 'agent'
                   ? 'bg-white/20 text-white shadow-lg'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                  : 'text-white/80 hover:text-white hover:bg-white/5'
               }`}
             >
               <Bot className="w-5 h-5" />
@@ -466,7 +469,7 @@ const AIAgentInterface: React.FC = () => {
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                 activeTab === 'analysis'
                   ? 'bg-white/20 text-white shadow-lg'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
+                  : 'text-white/80 hover:text-white hover:bg-white/5'
               }`}
             >
               <FileText className="w-5 h-5" />
